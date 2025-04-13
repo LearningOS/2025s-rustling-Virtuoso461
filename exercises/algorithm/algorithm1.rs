@@ -69,6 +69,50 @@ impl<T> LinkedList<T> {
             },
         }
     }
+
+    pub fn merge(mut list_a: LinkedList<T>, mut list_b: LinkedList<T>) -> Self
+    where
+        T: PartialOrd,
+    {
+        let mut merged_list = LinkedList::new();
+        let mut a = list_a.start.take();
+        let mut b = list_b.start.take();
+
+        loop {
+            let (should_take_a, should_take_b) = match (a.as_ref(), b.as_ref()) {
+                (Some(a_ptr), Some(b_ptr)) => {
+                    let a_val = unsafe { &(*a_ptr.as_ptr()).val };
+                    let b_val = unsafe { &(*b_ptr.as_ptr()).val };
+                    (a_val <= b_val, a_val > b_val)
+                }
+                (Some(_), None) => (true, false),
+                (None, Some(_)) => (false, true),
+                (None, None) => break,
+            };
+
+            if should_take_a {
+                let a_ptr = a.unwrap();
+                let a_node = unsafe { Box::from_raw(a_ptr.as_ptr()) };
+                merged_list.add(a_node.val);
+                a = a_node.next;
+            } else if should_take_b {
+                let b_ptr = b.unwrap();
+                let b_node = unsafe { Box::from_raw(b_ptr.as_ptr()) };
+                merged_list.add(b_node.val);
+                b = b_node.next;
+            }
+        }
+
+        // 处理剩余节点
+        let mut remaining = if a.is_some() { a } else { b };
+        while let Some(node_ptr) = remaining {
+            let node = unsafe { Box::from_raw(node_ptr.as_ptr()) };
+            merged_list.add(node.val);
+            remaining = node.next;
+        }
+
+        merged_list
+    }
 	pub fn merge(list_a:LinkedList<T>,list_b:LinkedList<T>) -> Self
 	{
 		//TODO
